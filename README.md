@@ -35,5 +35,4 @@ A Python-based toolkit for flexible pricing and profitability calculations acros
 ### 1. Depoyu klonla
 
 ```bash
-git clone https://github.com/<kullanıcı_adın>/<repo_adın>.git
-cd <repo_adın>
+git clone https://github.com/muhammedkalabasi10/pricing-toolkit.git
