@@ -16,10 +16,7 @@ while True:
         print("KDV eklenmedi.")
 
     # Kargo bedelini belirle
-    if alis_fiyati >= 300:
-        kargo = 85
-    else:
-        kargo = 0
+    kargo = 85
 
     # Komisyona %20 KDV ekle
     kdvli_komisyon = komisyon_orani * 1.20

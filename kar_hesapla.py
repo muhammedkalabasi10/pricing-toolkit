@@ -9,11 +9,8 @@ komisyon_orani = float(input("Komisyon oranını girin (%): "))
 kdvli_komisyon_orani = komisyon_orani * 1.20
 komisyon_tutari = satis_fiyati * (kdvli_komisyon_orani / 100)
 
-# 3️⃣ Kargo masrafı (300₺ ve üzeri için)
-if satis_fiyati >= 300:
-    kargo = 85
-else:
-    kargo = 0
+# 3️⃣ Kargo masrafı
+kargo = 85
 
 # 4️⃣ Alış fiyatına KDV ekleme isteği
 kdv_ekle = input("Alış fiyatına KDV eklemek ister misiniz? (E/H): ").strip().lower()
