@@ -68,13 +68,12 @@ def pick_column(df, candidates):
     return None
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("input", help="Giriş Excel dosyası (örn: veri.xlsx)")
-    ap.add_argument("--sheet", default=None, help="Sayfa adı (boşsa ilk sayfa)")
-    ap.add_argument("--out", default="kar_tablosu.xlsx", help="Çıkış Excel dosyası")
-    args = ap.parse_args()
+    input_file = "veri.xlsx"          # Giriş dosyası
+    sheet_name = None                 # İlk sayfa
+    output_file = "kar_tablosu.xlsx"  # Çıkış dosyası
 
-    df = pd.read_excel(args.input, sheet_name=args.sheet)
+    sheet_name = 0
+    df = pd.read_excel(input_file, sheet_name=sheet_name)
 
     col_urun = pick_column(df, ["Urun", "Ürün", "Product", "Adi", "Ad", "Name"])
     col_alis_birim = pick_column(df, ["Alis_Birim_Fiyati", "AlisBirimFiyati", "Alis_Birim", "Birim_Alis", "CostUnit"])
@@ -178,8 +177,8 @@ def main():
     }
 
     out_df = df[out_cols].rename(columns=rename_map)
-    out_df.to_excel(args.out, index=False)
-    print(f"✅ Kâr tablosu oluşturuldu: {args.out}")
+    out_df.to_excel(output_file, index=False)
+    print(f"✅ Kâr tablosu oluşturuldu: {output_file}")
 
 if __name__ == "__main__":
     main()
