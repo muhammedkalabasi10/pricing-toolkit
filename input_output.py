@@ -1,12 +1,11 @@
 import re
 import openpyxl
 from pathlib import Path
-from openpyxl.styles import PatternFill
 
 # === DOSYA YOLLARI (her hafta sadece WEEKLY_PATH değişecek) ===
-MASTER_PATH = Path("products.xlsx")
-WEEKLY_PATH = Path("offers_input.xlsx")
-OUT_PATH    = Path("offers_output.xlsx")
+MASTER_PATH = Path("Master_Boxer_Fanila_Kulot_UYakaAtlet_Fanila0230_sadece_UrunBilgisi_alis_fiyatlari_erdemden_paketli_iskontolu10.xlsx")
+WEEKLY_PATH = Path("input_offer.xlsx")
+OUT_PATH    = Path("output_offer.xlsx")
 
 SHIPPING_COST = 85.0
 VAT_RATE = 0.10  # %10
@@ -105,7 +104,6 @@ def main():
     wb = openpyxl.load_workbook(WEEKLY_PATH)
     ws = wb["Teklifler"] if "Teklifler" in wb.sheetnames else wb[wb.sheetnames[0]]
 
-    # --- Kolonları ilk haliyle bul ---
     sku_col = find_col(ws, lambda s: s.strip().lower() == "sku")
     kom_col = find_col(ws, lambda s: "komisyon" in s.lower() and "teklif" in s.lower() and "1" in s)
     max_col = find_col(ws, lambda s: ("katılabileceğiniz" in s.lower() or "katilabilece" in s.lower())
@@ -117,39 +115,11 @@ def main():
             f"Sütunlar bulunamadı. Bulunanlar: SKU={sku_col}, Komisyon1={kom_col}, MaxFiyat1={max_col}, FiyatGir={fiyatgir_col}"
         )
 
-    # --- "Fiyat Gir" sütununun hemen sağına 2 yeni sütun ekle ---
+    # "Fiyat Gir" sütununun hemen sağına 2 yeni sütun ekle
     insert_at = fiyatgir_col + 1
     ws.insert_cols(insert_at, amount=2)
     ws.cell(1, insert_at).value = "Kar/Zarar (Alış iskonto)"
     ws.cell(1, insert_at + 1).value = "Kar/Zarar (Alış iskonto + KDV %10)"
-
-    # ===== ÇÖZÜM 1: insert sonrası sağ taraftaki indeksleri kaydır =====
-    def shift_if_right(col_idx):
-        return col_idx + 2 if col_idx is not None and col_idx >= insert_at else col_idx
-
-    # Eğer komisyon / max / sku kolonları insert_at'in sağındaysa kayar
-    sku_col = shift_if_right(sku_col)
-    kom_col = shift_if_right(kom_col)
-    max_col = shift_if_right(max_col)
-    # fiyatgir_col değişmez (insert onun sağına yapıldı)
-
-    # --- Güncel Fiyat kolonunu insert'ten SONRA bul (doğru indeks) ---
-    guncel_col = find_col(
-        ws,
-        lambda s: ("güncel" in s.lower() or "guncel" in s.lower()) and "fiyat" in s.lower()
-    )
-
-    # Fill styles
-    green_fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
-    red_fill = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
-
-    try:
-        prompt = "Teklif bazında Kâr değeri girin (örn 50 veya 50,00). Boş bırakmak için Enter: "
-        user_raw = input(prompt).strip()
-    except (EOFError, KeyboardInterrupt):
-        user_raw = ""
-
-    user_profit = parse_turkish_number(user_raw) if user_raw else None
 
     for r in range(2, ws.max_row + 1):
         sku = ws.cell(r, sku_col).value
@@ -179,21 +149,6 @@ def main():
 
         ws.cell(r, insert_at).value = round(profit, 2)
         ws.cell(r, insert_at + 1).value = round(profit_vat, 2)
-
-        # Kullanıcının istediği kâr, KDV'li kârdan yüksekse -> Max fiyatı (tam sayı kırpılmış) yaz
-        if user_profit is not None and profit_vat is not None and user_profit > profit_vat:
-            # Aksi durumda Güncel Fiyat yaz (varsa) ve kırmızı boya
-            current_val = ws.cell(r, guncel_col).value if guncel_col else None
-            ws.cell(r, fiyatgir_col).value = current_val
-            ws.cell(r, fiyatgir_col).fill = red_fill
-        else:
-            raw_max = ws.cell(r, max_col).value
-            max_val = parse_turkish_number(raw_max)
-            if max_val is not None:
-                ws.cell(r, fiyatgir_col).value = int(max_val)  # küsuratı at
-            else:
-                ws.cell(r, fiyatgir_col).value = raw_max
-            ws.cell(r, fiyatgir_col).fill = green_fill
 
     wb.save(OUT_PATH)
     print(f"Kaydedildi: {OUT_PATH}")
