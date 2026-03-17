@@ -12,7 +12,9 @@ OUT_PATH = "kar_hesaplama_sonuclari.xlsx"
 
 SHIPPING = 85.0                     # kargo
 KDV_ORANI = 0.10                    # %10
-
+GENEL_KOMISYON_ORANI = 18
+GENEL_KOMISYON_RATE = GENEL_KOMISYON_ORANI / 100
+KOMISYON_KDV = 0.20
 
 # =======================
 # 2) YARDIMCI FONKSİYONLAR
@@ -72,7 +74,7 @@ products["Alış Fiyatı (İskontolu %10)"] = pd.to_numeric(
 )
 
 # Key alanlarını temizle
-satis["_key"] = satis["Satıcı Stok Kodu"].apply(normalize_key)
+satis["_key"] = satis["SKU"].apply(normalize_key)
 products["_key"] = products["HB Ürün Id"].apply(normalize_key)
 
 # Aynı Ürün Id birden fazla ise merge sırasında satır çoğalmasın diye tekilleştir
@@ -98,7 +100,28 @@ df["Alış_İsk10_KDV"] = df["Alış_İsk10"] * (1 + KDV_ORANI)
 
 # --- Satış/Fiyat üzerinden ---
 df["Brut_Satis_Fiyat"] = df[sales_col]
-df["Net_Satis_Fiyat"] = df["Brut_Satis_Fiyat"] * (1 - df["Komisyon_Rate"])
+# --- Komisyon KDV tanımı ---
+GENEL_KOMISYON_ORANI = 18
+GENEL_KOMISYON_RATE = GENEL_KOMISYON_ORANI / 100
+KOMISYON_KDV = 0.20
+
+df["Komisyon_Rate_KDVli"] = df["Komisyon_Rate"] * (1 + KOMISYON_KDV)
+GENEL_KOMISYON_RATE_KDVli = GENEL_KOMISYON_RATE * (1 + KOMISYON_KDV)
+
+# --- İndirimsiz satış hesabı ---
+if "İndirimli Fiyat" in df.columns:
+    df["Kullanilacak_Komisyon_KDVli"] = np.where(
+        df["İndirimli Fiyat"].notna(),
+        GENEL_KOMISYON_RATE_KDVli,
+        df["Komisyon_Rate_KDVli"]
+    )
+else:
+    df["Kullanilacak_Komisyon_KDVli"] = df["Komisyon_Rate_KDVli"]
+
+df["Net_Satis_Fiyat"] = df["Brut_Satis_Fiyat"] * (
+    1 - df["Kullanilacak_Komisyon_KDVli"]
+)
+
 df["KDVli_Kar_Fiyat"] = df["Net_Satis_Fiyat"] - df["Alış_İsk10_KDV"] - SHIPPING
 df["KDVsiz_Kar_Fiyat"] = df["Net_Satis_Fiyat"] - df["Alış_İsk10"] - SHIPPING
 
@@ -113,7 +136,7 @@ if "İndirimli Fiyat" in df.columns:
 # 6) SONUÇ TABLOSU
 # =======================
 base_cols = [
-    "Satıcı Stok Kodu", "Komisyon Oranı", sales_col, "İndirimli Fiyat",
+    "SKU", "Komisyon Oranı", sales_col, "İndirimli Fiyat",
     "HB Ürün Id", "Alış Fiyatı (İskontolu %10)",
     "Komisyon_Rate", "Alış_İsk10", "Alış_İsk10_KDV",
     "Net_Satis_Fiyat", "KDVli_Kar_Fiyat", "KDVsiz_Kar_Fiyat",
@@ -140,4 +163,4 @@ with pd.ExcelWriter(OUT_PATH, engine="openpyxl") as writer:
     summary.to_excel(writer, index=False, sheet_name="Ozet")
 
 print("Bitti! Dosya:", OUT_PATH)
-print(result.head(10))
+print(result.head(10))  
