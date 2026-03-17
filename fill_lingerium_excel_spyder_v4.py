@@ -14,7 +14,6 @@ Spyder / IDLE / doğrudan çalıştırma:
 - Hiç parametre verilmezse program kullanıcıdan giriş ister.
 - URL veya yerel HTML dosya yolu seçilebilir.
 - Çıktı dosyası sorulmaz; belirtilmezse çalışılan klasöre kaydedilir.
-- Aynı çıktı dosyası zaten varsa, yeni ürünler mevcut satırların altına eklenir.
 """
 
 import argparse
@@ -304,34 +303,8 @@ def build_variant_rows(product: dict):
     return rows
 
 
-
-
-def find_last_data_row(ws, headers: dict) -> int:
-    key_headers = ["Barkod", "Model Kodu", "Ürün Adı", "Stok Kodu", "Renk", "Beden"]
-    key_cols = [headers[h] for h in key_headers if h in headers]
-
-    if not key_cols:
-        return 1
-
-    for row_idx in range(ws.max_row, 1, -1):
-        for col_idx in key_cols:
-            value = ws.cell(row_idx, col_idx).value
-            if value is not None and clean_text(str(value)):
-                return row_idx
-    return 1
-
-
-def resolve_workbook_path(template_path: str, output_path: str) -> str:
-    output_file = Path(output_path)
-    if output_file.exists():
-        return str(output_file)
-    return template_path
-
-
 def write_excel(template_path: str, output_path: str, product: dict):
-    workbook_path = resolve_workbook_path(template_path, output_path)
-
-    wb = openpyxl.load_workbook(workbook_path)
+    wb = openpyxl.load_workbook(template_path)
     ws = wb[DEFAULT_SHEET]
 
     headers = {ws.cell(1, c).value: c for c in range(1, ws.max_column + 1)}
@@ -339,14 +312,9 @@ def write_excel(template_path: str, output_path: str, product: dict):
 
     variant_rows = build_variant_rows(product)
 
-    last_data_row = find_last_data_row(ws, headers)
-    start_row = 2 if last_data_row < 2 else last_data_row + 1
-    style_source_row = 2 if last_data_row < 2 else last_data_row
-
-    for offset, variant in enumerate(variant_rows):
-        row_idx = start_row + offset
-        if row_idx != style_source_row:
-            copy_row_style(ws, style_source_row, row_idx, ws.max_column)
+    for row_idx, variant in enumerate(variant_rows, start=2):
+        if row_idx > 2:
+            copy_row_style(ws, 2, row_idx, ws.max_column)
 
         color = variant["color"]
         size = variant["size"]
@@ -524,7 +492,6 @@ def main():
     print("Bedenler:", ", ".join(product["sizes"]))
     print("Yazılan varyant sayısı:", written)
     print("Çıktı dosyası:", output_path)
-    print("Not: Çıktı dosyası varsa yeni satırlar sona eklendi.")
 
 
 if __name__ == "__main__":
