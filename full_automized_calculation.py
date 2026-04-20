@@ -8,7 +8,7 @@ MASTER_PATH = Path("products.xlsx")
 WEEKLY_PATH = Path("offers_input.xlsx")
 OUT_PATH    = Path("offers_output.xlsx")
 
-SHIPPING_COST = 85.0
+SHIPPING_COST = 125.0
 VAT_RATE = 0.10  # %10
 
 def parse_turkish_number(val):

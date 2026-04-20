@@ -7,7 +7,7 @@ MASTER_PATH = Path("Master_Boxer_Fanila_Kulot_UYakaAtlet_Fanila0230_sadece_UrunB
 WEEKLY_PATH = Path("input_offer.xlsx")
 OUT_PATH    = Path("output_offer.xlsx")
 
-SHIPPING_COST = 85.0
+SHIPPING_COST = 125
 VAT_RATE = 0.10  # %10
 
 def parse_turkish_number(val):
